@@ -315,21 +315,33 @@ if(NOT NODEJS_LIBRARY)
 			# TODO: Delete this workaround after implementing the install command
 			set(NODEJS_LIBRARY_PATH ${NODEJS_OUTPUT_PATH}/${CMAKE_BUILD_TYPE})
 		else()
-			message(STATUS "Configure NodeJS shared library")
-
 			# TODO: Select correct ICU version depending on NodeJS version
 			# http://download.icu-project.org/files/icu4c/60.2/icu4c-60_2-src.tgz
 			# http://download.icu-project.org/files/icu4c/61.1/icu4c-61_1-src.tgz
 			# http://download.icu-project.org/files/icu4c/62.1/icu4c-62_1-src.tgz
 			# http://download.icu-project.org/files/icu4c/64.2/icu4c-64_2-src.tgz
 
-			if("${CMAKE_BUILD_TYPE}" EQUAL "Debug")
-				execute_process(COMMAND sh -c "./configure --with-icu-source=http://download.icu-project.org/files/icu4c/64.2/icu4c-64_2-src.tgz --shared --debug" WORKING_DIRECTORY "${NODEJS_OUTPUT_PATH}")
-			else()
-				execute_process(COMMAND sh -c "./configure --with-icu-source=http://download.icu-project.org/files/icu4c/64.2/icu4c-64_2-src.tgz --shared" WORKING_DIRECTORY "${NODEJS_OUTPUT_PATH}")
-			endif()
+			if(BUILD_SHARED_LIBS)
+				message(STATUS "Configure NodeJS shared library")
 
-			message(STATUS "Build NodeJS shared library")
+				if("${CMAKE_BUILD_TYPE}" EQUAL "Debug")
+					execute_process(COMMAND sh -c "./configure --with-icu-source=http://download.icu-project.org/files/icu4c/64.2/icu4c-64_2-src.tgz --shared --debug" WORKING_DIRECTORY "${NODEJS_OUTPUT_PATH}")
+				else()
+					execute_process(COMMAND sh -c "./configure --with-icu-source=http://download.icu-project.org/files/icu4c/64.2/icu4c-64_2-src.tgz --shared" WORKING_DIRECTORY "${NODEJS_OUTPUT_PATH}")
+				endif()
+
+				message(STATUS "Build NodeJS shared library")
+			else()
+				message(STATUS "Configure NodeJS static library")
+
+				if("${CMAKE_BUILD_TYPE}" EQUAL "Debug")
+					execute_process(COMMAND sh -c "./configure --with-icu-source=http://download.icu-project.org/files/icu4c/64.2/icu4c-64_2-src.tgz --fully-static --enable-static --debug" WORKING_DIRECTORY "${NODEJS_OUTPUT_PATH}")
+				else()
+					execute_process(COMMAND sh -c "./configure --with-icu-source=http://download.icu-project.org/files/icu4c/64.2/icu4c-64_2-src.tgz --fully-static --enable-static" WORKING_DIRECTORY "${NODEJS_OUTPUT_PATH}")
+				endif()
+
+				message(STATUS "Build NodeJS static library")
+			endif()
 
 			include(ProcessorCount)
 
@@ -341,7 +353,11 @@ if(NOT NODEJS_LIBRARY)
 				execute_process(COMMAND sh -c "alias pyhton=`which python2.7`; make -C out BUILDTYPE=${CMAKE_BUILD_TYPE} V=1" WORKING_DIRECTORY "${NODEJS_OUTPUT_PATH}" OUTPUT_QUIET)
 			endif()
 
-			message(STATUS "Install NodeJS shared library")
+			if(BUILD_SHARED_LIBS)
+				message(STATUS "Install NodeJS shared library")
+			else()
+				message(STATUS "Install NodeJS static library")
+			endif()
 
 			execute_process(COMMAND sh -c "make install PREFIX=\"${CMAKE_INSTALL_PREFIX}\"" WORKING_DIRECTORY "${NODEJS_OUTPUT_PATH}" OUTPUT_QUIET)
 		endif()
